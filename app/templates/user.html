@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import "_macros.html" as macros %}
 
 {% block title %} Flasky {% endblock %}
 
@@ -30,4 +31,10 @@
             </p>
         </div>
     </div>
+    {% include '_posts.html' %}
+    {% if posts_pagination %}
+        <div class="pagination">
+            {{ macros.pagination_widget(posts_pagination, '.index') }}
+        </div>
+    {% endif %}
 {% endblock %}

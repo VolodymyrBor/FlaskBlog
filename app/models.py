@@ -1,4 +1,5 @@
 import hashlib
+from random import seed, randint
 from datetime import datetime
 from typing import Tuple, Dict, Union
 
@@ -6,6 +7,8 @@ from flask import current_app, Flask, request
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import BadSignature, TimedJSONWebSignatureSerializer as Serializer
+from sqlalchemy.exc import IntegrityError
+import forgery_py
 
 from . import db, login_manager
 
@@ -88,12 +91,19 @@ class User(UserMixin, db.Model):
 
     posts = db.relationship('Post', backref='author', lazy='dynamic')
 
-    def __init__(self, username: str, email: str, password: str, role: Role = None, avatar_hash=None):
+    def __init__(self, username: str, email: str, password: str,
+                 role: Role = None, avatar_hash=None, confirmed: bool = False, name: str = None,
+                 location: str = None, about_me: str = None, member_since: str = None):
         self.username = username
         self.email = email
         self.password = password
         self.role = role
         self.avatar_hash = avatar_hash
+        self.confirmed = confirmed
+        self.location = location
+        self.about_me = about_me
+        self.member_since = member_since
+        self.name = name
 
         if not self.role:
             if self.email == current_app.config['FLASKY_ADMIN']:
@@ -199,6 +209,24 @@ class User(UserMixin, db.Model):
         db.session.commit()
         return self.avatar_hash
 
+    @staticmethod
+    def generate_fake(count: int = 100):
+        seed()
+        for _ in range(count):
+            user = User(username=forgery_py.internet.user_name(True),
+                        email=forgery_py.internet.email_address(),
+                        password=forgery_py.lorem_ipsum.word(),
+                        confirmed=True,
+                        name=forgery_py.name.full_name(),
+                        location=forgery_py.address.city(),
+                        about_me=forgery_py.lorem_ipsum.sentence(),
+                        member_since=forgery_py.date.date(True))
+            db.session.add(user)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+
 
 class AnonymousUser(AnonymousUserMixin):
 
@@ -220,6 +248,19 @@ class Post(db.Model):
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, body: str, author: User):
+    def __init__(self, body: str, author: User, timestamp: str = None):
         self.body = body
         self.author = author
+        self.timestamp = timestamp
+
+    @staticmethod
+    def generate_fake(count=100):
+        seed()
+        user_count = User.query.count()
+        for _ in range(count):
+            user = User.query.offset(randint(0, user_count - 1)).first()
+            post = Post(body=forgery_py.lorem_ipsum.sentences(randint(1, 3)),
+                        timestamp=forgery_py.date.date(True),
+                        author=user)
+            db.session.add(post)
+            db.session.commit()

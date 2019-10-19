@@ -1,14 +1,17 @@
-from flask import render_template, flash, redirect, url_for
 from flask_login import current_user
+from flask import render_template, flash, redirect, url_for, request, current_app, Flask
+from flask_sqlalchemy import Pagination
 
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm
 from .. import db
 from ..models import User, Role, Permission, Post
 from ..decorators import admin_required
+from ..utils import make_post_pagination
 
 
 current_user: User
+current_app: Flask
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -19,14 +22,15 @@ def index():
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('.index'))
-    posts = Post.query.order_by(Post.timestamp.desc()).all()
-    return render_template('index.html', form=form, posts=posts)
+    posts_pagination, posts = make_post_pagination(Post.query)
+    return render_template('index.html', form=form, posts=posts, posts_pagination=posts_pagination)
 
 
 @main.route('/user/<username>')
 def user_page(username):
     user = User.query.filter_by(username=username).first_or_404()
-    return render_template('user.html', user=user)
+    posts_pagination, posts = make_post_pagination(user.posts)
+    return render_template('user.html', user=user, posts=posts, posts_pagination=posts_pagination)
 
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
