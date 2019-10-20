@@ -1,0 +1,6 @@
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])
+
+from manage import app, Role, User, db, Post
+ctx = app.test_request_context()
+ctx.push()

@@ -15,3 +15,5 @@ Flask-SQLAlchemy
 Flask-WTF
 SQLAlchemy
 WTForms
+flask_pagedown
+flask_mail
