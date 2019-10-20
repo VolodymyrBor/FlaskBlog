@@ -75,3 +75,9 @@ def edit_profile_admin(user_id: int):
     form.location.data = user.location
     form.about_me.data = user.about_me
     return render_template('edit_profile.html', form=form, user=user)
+
+
+@main.route('/post/<int:post_id>')
+def post_page(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    return render_template('posts.html', posts=[post])
