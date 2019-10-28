@@ -1,5 +1,5 @@
-from flask_login import current_user
-from flask import render_template, flash, redirect, url_for, request, current_app, Flask
+from flask_login import current_user, login_required
+from flask import render_template, flash, redirect, url_for, request, current_app, Flask, abort
 from flask_sqlalchemy import Pagination
 
 from . import main
@@ -81,3 +81,20 @@ def edit_profile_admin(user_id: int):
 def post_page(post_id: int):
     post = Post.query.get_or_404(post_id)
     return render_template('posts.html', posts=[post])
+
+
+@main.route('/edit/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def edit(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    if current_user != post.author and not current_user.can(Permission.WRITE):
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.body = form.body.data
+        db.session.add(post)
+        db.session.commit()
+        flash('The post has been update.')
+        return redirect(url_for('.post_page', post_id=post.id))
+    form.body.data = post.body
+    return render_template('edit_post.html', form=form)
