@@ -1,16 +1,17 @@
 import hashlib
-from random import seed, randint
 from datetime import datetime
+from random import seed, randint
 from typing import Tuple, Dict, Union
 
+import bleach
+import forgery_py
+from markdown import markdown
+from flask_sqlalchemy import BaseQuery
+from sqlalchemy.exc import IntegrityError
 from flask import current_app, Flask, request
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import BadSignature, TimedJSONWebSignatureSerializer as Serializer
-from sqlalchemy.exc import IntegrityError
-import forgery_py
-import bleach
-from markdown import markdown
 
 from . import db, login_manager
 
@@ -87,6 +88,7 @@ class Follow(db.Model):
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
+    query: BaseQuery
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(64), unique=True, index=True)
@@ -137,6 +139,8 @@ class User(UserMixin, db.Model):
 
         if self.email and not self.avatar_hash:
             self.make_email_hash()
+
+        self.follow(self)
 
     @property
     def password(self):
@@ -268,10 +272,25 @@ class User(UserMixin, db.Model):
             db.session.delete(follow)
 
     @classmethod
-    def get_user_by_name(cls, username: str):
+    def get_user_by_name(cls, username: str, rise_404: bool = False):
         """Return obj of User from DataBase by username"""
-        return cls.query.filter_by(username=username).first()
+        if rise_404:
+            return cls.query.filter_by(username=username).first_or_404()
+        else:
+            return cls.query.filter_by(username=username).first()
 
+    @property
+    def followed_posts(self):
+        """Return posts of authors that follow user"""
+        return Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
+
+    @classmethod
+    def add_self_follows(cls):
+        for user in cls.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
 
 
 class AnonymousUser(AnonymousUserMixin):
@@ -288,6 +307,8 @@ login_manager.anonymous_user = AnonymousUser
 
 class Post(db.Model):
     __tablename__ = 'posts'
+    query: BaseQuery
+
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
@@ -299,6 +320,7 @@ class Post(db.Model):
         self.body = body
         self.author = author
         self.timestamp = timestamp
+        self.body_html = body_html
 
     @staticmethod
     def generate_fake(count=100):
