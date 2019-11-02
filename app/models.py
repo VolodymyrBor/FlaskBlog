@@ -74,6 +74,17 @@ class Role(db.Model):
         return f' |{self.__tablename__} {self.name}| '
 
 
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, follower, followed):
+        self.follower = follower
+        self.followed = followed
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -92,6 +103,17 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+
+    followed = db.relationship('Follow',
+                               foreign_keys=[Follow.follower_id],
+                               backref=db.backref('follower', lazy='joined'),
+                               lazy='dynamic',
+                               cascade='all, delete-orphan')
+    followers = db.relationship('Follow',
+                                foreign_keys=[Follow.followed_id],
+                                backref=db.backref('followed', lazy='joined'),
+                                lazy='dynamic',
+                                cascade='all, delete-orphan')
 
     def __init__(self, username: str, email: str, password: str,
                  role: Role = None, avatar_hash=None, confirmed: bool = False, name: str = None,
@@ -228,6 +250,28 @@ class User(UserMixin, db.Model):
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
+
+    def is_following(self, user) -> bool:
+        return self.followed.filter_by(followed_id=user.id).first() is not None
+
+    def is_followed_by(self, user) -> bool:
+        return self.followers.filter_by(follower_id=user.id).first() is not None
+
+    def follow(self, user):
+        if not self.is_following(user):
+            follow = Follow(self, user)
+            db.session.add(follow)
+
+    def unfollow(self, user):
+        follow = self.followed.filter_id(followed_id=user.id).first()
+        if follow:
+            db.session.delete(follow)
+
+    @classmethod
+    def get_user_by_name(cls, username: str):
+        """Return obj of User from DataBase by username"""
+        return cls.query.filter_by(username=username).first()
+
 
 
 class AnonymousUser(AnonymousUserMixin):
