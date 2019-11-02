@@ -21,5 +21,3 @@ def permission_required(permission):
 
 def admin_required(function):
     return permission_required(Permission.ADMIN)(function)
-
-

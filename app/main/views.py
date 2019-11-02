@@ -2,16 +2,17 @@ from flask_login import current_user, login_required
 from flask import render_template, flash, redirect, url_for, Flask, abort, request, current_app, make_response, Response
 
 from . import main
-from .forms import EditProfileForm, EditProfileAdminForm, PostForm
+from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
 from .. import db
-from ..models import User, Role, Permission, Post
+from ..models import User, Role, Permission, Post, Comment
 from ..decorators import admin_required, permission_required
-from ..utils import make_post_pagination
+from ..ustils import make_post_pagination, make_comments_pagination
 
 current_user: User
 current_app: Flask
 
 MAX_AGE_COOKIES = 30*24*60*60
+
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
@@ -22,15 +23,15 @@ def index():
         db.session.commit()
         return redirect(url_for('.index'))
 
-    show_followed = False
+    show_followed_ = False
     if current_user.is_authenticated:
-        show_followed = bool(request.cookies.get('show_followed', ''))
+        show_followed_ = bool(request.cookies.get('show_followed', ''))
     query = current_user.followed_posts if show_followed else Post.query
 
     posts_pagination, posts = make_post_pagination(query)
 
     return render_template('index.html', form=form, posts=posts, posts_pagination=posts_pagination,
-                           show_followed=show_followed)
+                           show_followed=show_followed_)
 
 
 @main.route('/all')
@@ -100,10 +101,20 @@ def edit_profile_admin(user_id: int):
     return render_template('edit_profile.html', form=form, user=user)
 
 
-@main.route('/post/<int:post_id>')
+@main.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def post_page(post_id: int):
-    post = Post.query.get_or_404(post_id)
-    return render_template('posts.html', posts=[post])
+    post: Post = Post.query.get_or_404(post_id)
+
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment = Comment(form.body.data, current_user, post)
+        db.session.add(comment)
+        db.session.commit()
+        flash('Your comment has been published.')
+        return redirect(url_for('.post_page', post_id=post_id, page=-1))
+
+    pagination, comments = make_comments_pagination(post)
+    return render_template('posts.html', posts=[post], form=form, comments=comments, pagination=pagination)
 
 
 @main.route('/edit/<int:post_id>', methods=['GET', 'POST'])
@@ -134,7 +145,6 @@ def follow(username):
     if current_user.is_following(user):
         flash('You are already following this user.')
         return redirect(url_for('.user', username=username))
-
     current_user.follow(user)
     flash(f'You are now following {username}')
     return redirect(url_for('.user_page', username=username))
@@ -150,7 +160,6 @@ def unfollow(username):
     if not current_user.is_following(user):
         flash('You are not following this user.')
         return redirect(url_for('.user', username=username))
-
     current_user.unfollow(user)
     flash(f'You are not following {username} anymore')
 
@@ -187,4 +196,3 @@ def followed_by(username):
     return render_template('followers.html', user=user, title="Followed by",
                            endpoint='.followed_by', pagination=pagination,
                            follows=follows)
-

@@ -5,8 +5,8 @@ from typing import Tuple, Dict, Union
 
 import bleach
 import forgery_py
-from markdown import markdown
 from flask_sqlalchemy import BaseQuery
+from markdown import markdown
 from sqlalchemy.exc import IntegrityError
 from flask import current_app, Flask, request
 from flask_login import UserMixin, AnonymousUserMixin
@@ -29,6 +29,17 @@ class Permission:
     WRITE = 0x04
     MODERATE = 0x08
     ADMIN = 0xff
+
+
+class PostsCallback:
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
+                                                       tags=allowed_tags, strip=True))
 
 
 class Role(db.Model):
@@ -88,7 +99,7 @@ class Follow(db.Model):
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    query: BaseQuery
+    # query: BaseQuery
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(64), unique=True, index=True)
@@ -105,7 +116,6 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     posts = db.relationship('Post', backref='author', lazy='dynamic')
-
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
@@ -116,6 +126,7 @@ class User(UserMixin, db.Model):
                                 backref=db.backref('followed', lazy='joined'),
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
 
     def __init__(self, username: str, email: str, password: str,
                  role: Role = None, avatar_hash=None, confirmed: bool = False, name: str = None,
@@ -305,7 +316,7 @@ class AnonymousUser(AnonymousUserMixin):
 login_manager.anonymous_user = AnonymousUser
 
 
-class Post(db.Model):
+class Post(db.Model, PostsCallback):
     __tablename__ = 'posts'
     query: BaseQuery
 
@@ -316,11 +327,12 @@ class Post(db.Model):
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, body: str, author: User, timestamp: str = None, body_html=None):
+    comments = db.relationship('Comment', backref='post', lazy='dynamic')
+
+    def __init__(self, body: str, author: User, timestamp: str = None):
         self.body = body
         self.author = author
         self.timestamp = timestamp
-        self.body_html = body_html
 
     @staticmethod
     def generate_fake(count=100):
@@ -334,13 +346,26 @@ class Post(db.Model):
             db.session.add(post)
             db.session.commit()
 
-    @staticmethod
-    def on_changed_body(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-                        'h1', 'h2', 'h3', 'p']
-        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
-                                                       tags=allowed_tags, strip=True))
+
+class Comment(db.Model, PostsCallback):
+    __tablename__ = 'comments'
+    query: BaseQuery
+
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    disabled = db.Column(db.Boolean)
+
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    def __init__(self, body: str, author: User, post: Post, disabled=False):
+        self.body = body
+        self.disabled = disabled
+        self.author = author
+        self.post = post
 
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
+db.event.listen(Comment.body, 'set', Comment.on_changed_body)

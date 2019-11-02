@@ -1,9 +1,9 @@
-{% macro pagination_widget(pagination, endpoint) %}
-    <ul class="pagination center-block">
+{% macro pagination_widget(pagination, endpoint, fragment='') %}
+    <ul class="pagination">
         <li {% if not pagination.has_prev %} class="disabled" {% endif %}>
             <a href="
                     {% if pagination.has_prev %}
-                        {{ url_for(endpoint, page=pagination.page - 1, **kwargs) }}
+                        {{ url_for(endpoint, page=pagination.prev_num, **kwargs) }}{{ fragment }}
                     {% else %}#{% endif %}">
                 &laquo;
             </a>
@@ -12,11 +12,11 @@
             {% if page %}
                 {% if page == pagination.page %}
                     <li class="active">
-                        <a href="{{ url_for(endpoint, page=page, **kwargs) }}">{{ page }}</a>
+                        <a href="{{ url_for(endpoint, page=page, **kwargs) }}{{ fragment }}">{{ page }}</a>
                     </li>
                 {% else %}
                     <li>
-                        <a href="{{ url_for(endpoint, page=page, **kwargs) }}">{{ page }}</a>
+                        <a href="{{ url_for(endpoint, page=page, **kwargs) }}{{ fragment }}">{{ page }}</a>
                     </li>
                 {% endif %}
             {% else %}
@@ -26,7 +26,7 @@
         <li {% if not  pagination.has_next %} class="disabled" {% endif %}>
             <a href="
                     {% if pagination.has_next %}
-                        {{ url_for(endpoint, page=pagination.page + 1, **kwargs) }}
+                        {{ url_for(endpoint, page=pagination.page + 1, **kwargs) }}{{ fragment }}
                     {% else %}#{% endif %}">
                 &raquo;
             </a>

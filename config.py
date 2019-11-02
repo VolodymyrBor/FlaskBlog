@@ -7,12 +7,12 @@ basedir = abspath(dirname(__file__))
 class Config:
     SECRET_KEY = environ.get('SECRET_KEY') or 'very hard string'
     SQLALCHEMY_TRACK_MODIFICATIONS = True
-    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
     FLASKY_MAIL_SENDER = 'Flasky Admin <darkblog.flask@gmail.com>'
     FLASKY_ADMIN = environ.get('FLASKY_ADMIN')
     FLASK_POSTS_PER_PAGE = 20
     FLASKY_FOLLOWERS_PER_PAGE = 10
+    FLASKY_COMMENTS_PER_PAGE = 10
 
     @staticmethod
     def init_app(app):
