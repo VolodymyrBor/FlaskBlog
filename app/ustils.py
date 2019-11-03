@@ -36,6 +36,3 @@ def make_comments_pagination(post: Post) -> Tuple[Pagination, Any]:
         error_out=False)
     comments = comments_pagination.items
     return comments_pagination, comments
-
-
-

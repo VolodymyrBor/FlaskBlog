@@ -31,10 +31,10 @@
             </p>
 
             {% if current_user.can(Permission.FOLLOW) and user != current_user %}
-                {% if not current_user.is_following(user) %}
-                    <a href="{{ url_for('.follow', username=user.username) }}" class="btn btn-primary">Follow</a>
-                {% else %}
+                {% if current_user.is_following(user) %}
                     <a href="{{ url_for('.unfollow', username=user.username) }}" class="btn btn-default">Unfollow</a>
+                {% else %}
+                    <a href="{{ url_for('.follow', username=user.username) }}" class="btn btn-primary">Follow</a>
                 {% endif %}
             {% endif %}
             <a href="{{ url_for('.followers', username=user.username) }}">

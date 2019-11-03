@@ -3,7 +3,6 @@ from datetime import datetime
 from random import seed, randint
 from typing import Tuple, Dict, Union
 
-import bleach
 import forgery_py
 from flask_sqlalchemy import BaseQuery
 from markdown import markdown
@@ -35,11 +34,11 @@ class PostsCallback:
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-                        'h1', 'h2', 'h3', 'p']
-        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),
-                                                       tags=allowed_tags, strip=True))
+        extensions = [
+            'extra',
+            'codehilite',
+        ]
+        target.body_html = markdown(value, extensions=extensions)
 
 
 class Role(db.Model):
@@ -276,11 +275,13 @@ class User(UserMixin, db.Model):
         if not self.is_following(user):
             follow = Follow(self, user)
             db.session.add(follow)
+            db.session.commit()
 
     def unfollow(self, user):
-        follow = self.followed.filter_id(followed_id=user.id).first()
+        follow = self.followed.filter_by(followed_id=user.id).first()
         if follow:
             db.session.delete(follow)
+            db.session.commit()
 
     @classmethod
     def get_user_by_name(cls, username: str, rise_404: bool = False):

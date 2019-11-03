@@ -1,3 +1,24 @@
+body {
+    background-color: white;
+    color: black;
+}
+
+a {
+    color: #464878;
+}
+
+a:hover {
+    color: #111d78;
+}
+
+li {
+    border-bottom: 1px solid #787878;
+}
+
+.page {
+    background-color: rgba(16, 16, 16, 0.84);
+}
+
 .profile-thumbnail {
     position: absolute;
 }
@@ -20,10 +41,13 @@ div.post-tabs ul.posts {
 }
 ul.posts li.post {
     padding: 8px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 5px solid #000000;
+    border-radius: 10px 10px 10px;
 }
 ul.posts li.post:hover {
-    background-color: #f0f0f0;
+    background-color: #000611;
+    border-radius: 10px;
+    color: white;
 }
 div.post-date {
     float: right;
@@ -55,7 +79,7 @@ ul.comments li.comment:nth-child(1) {
     border-top: 1px solid #e0e0e0;
 }
 ul.comments li.comment:hover {
-    background-color: #f0f0f0;
+    background-color: #2c0217;
 }
 div.comment-date {
     float: right;
@@ -104,4 +128,8 @@ div.flask-pagedown-preview h3 {
 }
 .table.followers tr {
     border-bottom: 1px solid #e0e0e0;
+}
+
+.table-hover>tbody>tr:hover {
+    background-color: #381414;
 }

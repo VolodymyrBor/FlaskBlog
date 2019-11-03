@@ -26,7 +26,11 @@ def index():
     show_followed_ = False
     if current_user.is_authenticated:
         show_followed_ = bool(request.cookies.get('show_followed', ''))
-    query = current_user.followed_posts if show_followed else Post.query
+
+    if show_followed_:
+        query = current_user.followed_posts
+    else:
+        query = Post.query
 
     posts_pagination, posts = make_post_pagination(query)
 
@@ -162,6 +166,7 @@ def unfollow(username):
         return redirect(url_for('.user', username=username))
     current_user.unfollow(user)
     flash(f'You are not following {username} anymore')
+    return redirect(url_for('.user_page', username=username))
 
 
 @main.route('/followers/<username>')
