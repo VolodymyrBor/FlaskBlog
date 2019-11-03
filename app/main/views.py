@@ -201,3 +201,28 @@ def followed_by(username):
     return render_template('followers.html', user=user, title="Followed by",
                            endpoint='.followed_by', pagination=pagination,
                            follows=follows)
+
+
+@main.route('/moderate')
+@login_required
+@permission_required(Permission.MODERATE)
+def moderate():
+    page = request.args.get('page', 1, type=int)
+    pagination = Comment.query.order_by(Comment.timestamp.desc()).paginate(
+        page,
+        per_page=current_app.config['FLASKY_COMMENTS_PER_PAGE'],
+        error_out=False)
+    comments = pagination.items
+    return render_template('moderator.html', comments=comments, pagination=pagination, page=page)
+
+
+@main.route('/moderate/change/<comment_id>')
+@login_required
+@permission_required(Permission.MODERATE)
+def moderate_change(comment_id: int):
+    value = request.args.get('value', False, type=bool)
+    comment: Comment = Comment.query.get_or_404(comment_id)
+    comment.disabled = value
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for('.moderate', page=request.args.get('page', 1, type=int)))
