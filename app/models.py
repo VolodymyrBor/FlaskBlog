@@ -98,7 +98,7 @@ class Follow(db.Model):
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    # query: BaseQuery
+    query: BaseQuery
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(64), unique=True, index=True)
