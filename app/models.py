@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from random import seed, randint
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, Optional, List
 
 import forgery_py
 from flask_sqlalchemy import BaseQuery
@@ -157,10 +157,10 @@ class User(UserMixin, db.Model):
         raise AttributeError('Password is not readable attribute')
 
     @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
+    def password(self, new_password):
+        self.password_hash = generate_password_hash(new_password)
 
-    def gravatar(self, size=100, default='retro', rating='g'):
+    def gravatar(self, size: int = 100, default='retro', rating='g') -> str:
         url = 'https://secure.gravatar.com/avatar' if request.is_secure else 'http://gravatar.com/avatar'
         hash_request = self.avatar_hash or self.make_email_hash()
         return f'{url}/{hash_request}?s={size}&d={default}&r={rating}'
@@ -168,17 +168,30 @@ class User(UserMixin, db.Model):
     def verify_password(self, password) -> bool:
         return check_password_hash(self.password_hash, password)
 
-    def generate_confirmation_token(self, expiration=3600) -> str:
+    def generate_confirmation_token(self, expiration: int = 3600) -> str:
         serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
         return serializer.dumps({'confirm': self.id})
 
-    def generate_reset_token(self, expiration=3600) -> str:
+    def generate_reset_token(self, expiration: int = 3600) -> str:
         s = Serializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'reset': self.id}).decode('utf-8')
 
-    def generate_email_change_token(self, new_email: str, expiration=3600) -> str:
+    def generate_email_change_token(self, new_email: str, expiration: int = 3600) -> str:
         s = Serializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'change_email': self.id, 'new_email': new_email}).decode('utf-8')
+
+    def generate_auth_token(self, expiration: int) -> bytes:
+        s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'id': self.id})
+
+    @staticmethod
+    def verify_auth_token(token: str) -> Optional['User']:
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except BadSignature:
+            return None
+        return User.query.get(data['id'])
 
     def confirm(self, token: bytes) -> bool:
         serializer = Serializer(current_app.config['SECRET_KEY'])
@@ -196,7 +209,7 @@ class User(UserMixin, db.Model):
         return True
 
     @staticmethod
-    def reset_password(token: Union[bytes, str, bytearray], new_password):
+    def reset_password(token: Union[bytes, str, bytearray], new_password) -> bool:
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
             data: dict = serializer.loads(token)
@@ -211,7 +224,7 @@ class User(UserMixin, db.Model):
         else:
             return False
 
-    def change_email(self, token):
+    def change_email(self, token) -> bool:
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
             data: dict = serializer.loads(token)
@@ -284,7 +297,7 @@ class User(UserMixin, db.Model):
             db.session.commit()
 
     @classmethod
-    def get_user_by_name(cls, username: str, rise_404: bool = False):
+    def get_user_by_name(cls, username: str, rise_404: bool = False) -> 'User':
         """Return obj of User from DataBase by username"""
         if rise_404:
             return cls.query.filter_by(username=username).first_or_404()
@@ -292,7 +305,7 @@ class User(UserMixin, db.Model):
             return cls.query.filter_by(username=username).first()
 
     @property
-    def followed_posts(self):
+    def followed_posts(self) -> List['Post']:
         """Return posts of authors that follow user"""
         return Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
 

@@ -12,7 +12,7 @@ def send_async_email(app: Flask, msg: Message):
         mail.send(msg)
 
 
-def send_email(to: Union[Tuple[str], List[str]], subject: str, template: str, **kwargs):
+def send_email(to: Union[Tuple[str], List[str]], subject: str, template: str, **kwargs) -> Thread:
     app = current_app._get_current_object()
     msg = Message(
         app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject,
