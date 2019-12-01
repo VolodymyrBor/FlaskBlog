@@ -17,7 +17,7 @@ def make_post_pagination(pageable) -> Tuple[Pagination, Any]:
     page = request.args.get('page', 1, type=int)
     posts_pagination: Pagination = pageable.order_by(Post.timestamp.desc()).paginate(
         page,
-        per_page=current_app.config['FLASK_POSTS_PER_PAGE'],
+        per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     posts = posts_pagination.items
     return posts_pagination, posts

@@ -7,12 +7,13 @@ import forgery_py
 from flask_sqlalchemy import BaseQuery
 from markdown import markdown
 from sqlalchemy.exc import IntegrityError
-from flask import current_app, Flask, request
-from flask_login import UserMixin, AnonymousUserMixin
+from flask import current_app, Flask, request, url_for, Response
+from flask_login import UserMixin, AnonymousUserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import BadSignature, TimedJSONWebSignatureSerializer as Serializer
 
 from . import db, login_manager
+from .exceptions import ValidationError
 
 current_app: Flask
 
@@ -180,9 +181,9 @@ class User(UserMixin, db.Model):
         s = Serializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'change_email': self.id, 'new_email': new_email}).decode('utf-8')
 
-    def generate_auth_token(self, expiration: int) -> bytes:
+    def generate_auth_token(self, expiration: int) -> str:
         s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)
-        return s.dumps({'id': self.id})
+        return s.dumps({'id': self.id}).decode('utf-8')
 
     @staticmethod
     def verify_auth_token(token: str) -> Optional['User']:
@@ -317,6 +318,18 @@ class User(UserMixin, db.Model):
                 db.session.add(user)
                 db.session.commit()
 
+    def to_json(self) -> dict:
+        json_user = {
+            'url':  url_for('api.get_user', user_id=self.id, _external=True),
+            'username': self.username,
+            'member_since': self.member_since,
+            'last_seen': self.last_seen,
+            'posts': url_for('api.get_user_posts', user_id=self.id, _external=True),
+            'followed_posts': url_for('api.get_user_followed_posts', user_id=self.id, _external=True),
+            'post_count': self.posts.count()
+        }
+        return json_user
+
 
 class AnonymousUser(AnonymousUserMixin):
 
@@ -343,7 +356,7 @@ class Post(db.Model, PostsCallback):
 
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
 
-    def __init__(self, body: str, author: User, timestamp: str = None):
+    def __init__(self, body: str, author: Optional[User], timestamp: str = None):
         self.body = body
         self.author = author
         self.timestamp = timestamp
@@ -359,6 +372,25 @@ class Post(db.Model, PostsCallback):
                         author=user)
             db.session.add(post)
             db.session.commit()
+
+    def to_json(self) -> dict:
+        json_post = {
+            'url': url_for('api.get_post', post_id=self.id, _external=True),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author': url_for('api.get_user', user_id=self.author_id, _external=True),
+            'comments': url_for('api.get_comments', comment_id=self.id, _external=True),
+            'comment_count': self.comments.count()
+        }
+        return json_post
+
+    @staticmethod
+    def from_json(json_post: dict) -> 'Post':
+        body = json_post.get('body')
+        if body is None or body == '':
+            raise ValidationError('post does not have body')
+        return Post(body=body, author=None)
 
 
 class Comment(db.Model, PostsCallback):

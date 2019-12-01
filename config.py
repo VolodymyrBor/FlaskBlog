@@ -10,7 +10,7 @@ class Config:
     FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
     FLASKY_MAIL_SENDER = 'Flasky Admin <darkblog.flask@gmail.com>'
     FLASKY_ADMIN = environ.get('FLASKY_ADMIN')
-    FLASK_POSTS_PER_PAGE = 20
+    FLASKY_POSTS_PER_PAGE = 20
     FLASKY_FOLLOWERS_PER_PAGE = 10
     FLASKY_COMMENTS_PER_PAGE = 10
     TTL_TOKEN = 3600  # seconds
