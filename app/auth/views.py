@@ -7,6 +7,7 @@ from .forms import (LoginForm, RegistrationForm, ChangePasswordForm,
 from .. import db
 from ..models import User
 from ..email import send_email
+from images_path import ImagesPath
 
 current_user: User
 
@@ -34,6 +35,7 @@ def login():
 @auth.route('/logout')
 @login_required
 def logout():
+    ImagesPath(current_user.username).delete_buffer()
     logout_user()
     flash('Yor have been logged out.')
     return redirect(url_for('main.index'))

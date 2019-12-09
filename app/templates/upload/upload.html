@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block title %} Flasky - Upload {% endblock %}
+
+{% block page_content %}
+
+    <div class="page-header">
+        <h1>Upload</h1>
+    </div>
+
+
+    {% if form %}
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    {% endif %}
+
+    <h1>{{ filename }}</h1>
+
+    {% if filename %}
+        <img class="img-rounded profile-thumbnail" src="{{ url_for('images', filename=filename) }}" alt>
+    {% endif %}
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block title %} Flasky - Style Transfer {% endblock %}
+
+{% block page_content %}
+
+    <div class="page-header">
+        <h1>Style Transfer</h1>
+    </div>
+
+
+    <div class="col-md-4">
+        {{ wtf.quick_form(form) }}
+    </div>
+
+    {% if target_image_path and style_reference_path %}
+        <h1>Images: </h1>
+        <div class="page-header">
+            <img class="img-rounded profile-thumbnail" src="{{ target_image_path }}" alt>
+            <img class="img-rounded profile-thumbnail" src="{{ style_reference_path }}" alt>
+        </div>
+    {% endif %}
+
+{% endblock %}
