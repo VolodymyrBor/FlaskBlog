@@ -5,7 +5,7 @@ from os import mkdir, listdir, remove
 
 ROOT_DIR = dirname(abspath(__file__))
 
-IMAGES_PATH = join(ROOT_DIR, 'app', 'static', 'images')
+IMAGES_PATH = join(ROOT_DIR, 'static', 'images')
 
 
 class ImagesPath:

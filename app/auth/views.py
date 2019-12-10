@@ -7,7 +7,7 @@ from .forms import (LoginForm, RegistrationForm, ChangePasswordForm,
 from .. import db
 from ..models import User
 from ..email import send_email
-from images_path import ImagesPath
+from app.images_path import ImagesPath
 
 current_user: User
 

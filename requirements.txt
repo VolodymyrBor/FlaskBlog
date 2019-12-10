@@ -1,3 +1,6 @@
+scipy
+imageio
+numpy
 markdown2
 bleach
 markdown
@@ -17,4 +20,7 @@ Flask-WTF
 SQLAlchemy
 WTForms
 flask_pagedown
-flask_mail
+flask-httpauth
+Keras
+tensorflow
+

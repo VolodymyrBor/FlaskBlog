@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.models import User
-from images_path import ImagesPath
+from app.images_path import ImagesPath
 from . import transfer
 from .forms import PhotoForm
 
