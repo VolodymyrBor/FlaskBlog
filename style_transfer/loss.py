@@ -1,13 +1,13 @@
 from keras import backend
 from keras import Model
 
-from .defenitions import IMG_HEIGHT, IMG_WIDTH
-
 
 class Loss:
 
-    def __init__(self, model: 'Model'):
+    def __init__(self, model: 'Model', img_height: int, img_width: int):
         self.model = model
+        self.img_height = img_height
+        self.img_width = img_width
 
     @staticmethod
     def content_loss(base, combination):
@@ -19,18 +19,16 @@ class Loss:
         gram = backend.dot(features, backend.transpose(features))
         return gram
 
-    @classmethod
-    def style_loss(cls, style, combination):
-        s = cls.gram_matrix(style)
-        c = cls.gram_matrix(combination)
+    def style_loss(self, style, combination):
+        s = self.gram_matrix(style)
+        c = self.gram_matrix(combination)
         channels = 3
-        size = IMG_HEIGHT * IMG_WIDTH
+        size = self.img_height * self.img_width
         return backend.sum(backend.square(s - c)) / (4. * (channels ** 2) * (size ** 2))
 
-    @staticmethod
-    def total_variation_loss(x):
-        a = backend.square(x[:, :IMG_HEIGHT - 1, :IMG_WIDTH - 1] - x[:, 1, :IMG_WIDTH - 1, :])
-        b = backend.square(x[:, :IMG_HEIGHT - 1, :IMG_WIDTH - 1] - x[:, :IMG_HEIGHT - 1, 1:, :])
+    def total_variation_loss(self, x):
+        a = backend.square(x[:, :self.img_height - 1, :self.img_width - 1] - x[:, 1, :self.img_width - 1, :])
+        b = backend.square(x[:, :self.img_height - 1, :self.img_width - 1] - x[:, :self.img_height - 1, 1:, :])
         return backend.sum(backend.pow(a + b, 1.25))
 
     def total_loss(self, combination_image):

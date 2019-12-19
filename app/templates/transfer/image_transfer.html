@@ -9,17 +9,32 @@
         <h1>Style Transfer</h1>
     </div>
 
-
-    <div class="col-md-4">
+    <div class="input-group-lg">
         {{ wtf.quick_form(form) }}
     </div>
 
-    {% if target_image_path and style_reference_path %}
-        <h1>Images: </h1>
-        <div class="page-header">
-            <img class="img-rounded profile-thumbnail" src="{{ target_image_path }}" alt>
-            <img class="img-rounded profile-thumbnail" src="{{ style_reference_path }}" alt>
+    {% if target_image_path %}
+        <div class="row transfer-result">
+            <div class="col-lg-4">
+                <p>Target Image</p>
+                <img class="img-rounded" src="{{ url_for('static', filename=target_image_path) }}" alt>
+            </div>
+            <div class="col-lg-4">
+                <p>Style reference image</p>
+                <img class="img-rounded" src="{{ url_for('static', filename=style_reference_image_path) }}" alt>
+            </div>
+
+            <div class="col-lg-4">
+                <p>Result image</p>
+                <img class="img-rounded" src="{{ url_for('static', filename=result_image_path) }}" alt>
+            </div>
+        </div>
+        <div class="center-block save-button">
+            <a class="btn btn-primary long_button" href="{{ url_for('transfer.save_image', username=username) }}">Save Image</a>
         </div>
     {% endif %}
+
+
+
 
 {% endblock %}

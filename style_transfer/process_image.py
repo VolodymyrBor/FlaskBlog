@@ -3,14 +3,15 @@ from numpy import ndarray
 from keras_preprocessing.image import load_img, img_to_array
 from keras.applications import vgg19
 
-from .defenitions import IMG_HEIGHT, IMG_WIDTH
-
 
 class ProcessImage:
 
-    @staticmethod
-    def preprocess_image(image_path: str) -> ndarray:
-        img = load_img(image_path, target_size=(IMG_HEIGHT, IMG_WIDTH))
+    def __init__(self,  img_height: int, img_width: int):
+        self.img_height = img_height
+        self.img_width = img_width
+
+    def preprocess_image(self, image_path: str) -> ndarray:
+        img = load_img(image_path, target_size=(self.img_height, self.img_width))
         img = img_to_array(img)
         img = np.expand_dims(img, axis=0)
         img = vgg19.preprocess_input(img)

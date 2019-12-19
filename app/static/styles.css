@@ -133,3 +133,48 @@ div.flask-pagedown-preview h3 {
 .table-hover>tbody>tr:hover {
     background-color: #381414;
 }
+
+
+.img.style-transfer {
+    width: 400px;
+    height: 400px;
+}
+
+
+.gallery {
+    overflow: hidden;
+    width: 480px;
+}
+.gallery.border {
+    float: left;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+.gallery.img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+}
+
+div.transfer-result img{
+    width: 400px;
+    height: 400px;
+    object-fit: cover;
+    padding: 10px;
+    border-radius: 30px;
+}
+
+div.transfer-result p{
+    text-align: center;
+}
+
+a.long_button {
+    text-align: center;
+    width: 100%;
+}
+
+.save-button {
+    padding-left: 40px;
+}
+
+/*width: 150px; height: 150px; object-fit: cover;*/

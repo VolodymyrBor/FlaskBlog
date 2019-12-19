@@ -37,6 +37,8 @@
                     <a href="{{ url_for('.follow', username=user.username) }}" class="btn btn-primary">Follow</a>
                 {% endif %}
             {% endif %}
+            <a href="{{ url_for('transfer.gallery', username=user.username) }}" class="btn btn-default">Gallery</a>
+
             <a href="{{ url_for('.followers', username=user.username) }}">
                 Followers: <span class="badge">{{ user.followers.count() - 1 }}</span>
             </a>
@@ -46,7 +48,6 @@
             {% if current_user.is_authenticated and user != current_user and user.is_following(current_user) %}
                 | <span class="label label-default">Follows you</span>
             {% endif %}
-
         </div>
     </div>
 

@@ -1,4 +1,4 @@
-from flask import render_template, redirect, request, url_for, flash
+from flask import render_template, redirect, request, url_for, flash, current_app, Flask
 from flask_login import login_user, login_required, logout_user, current_user
 
 from . import auth
@@ -10,6 +10,7 @@ from ..email import send_email
 from app.images_path import ImagesPath
 
 current_user: User
+current_app: Flask
 
 
 @auth.before_app_request
@@ -35,7 +36,7 @@ def login():
 @auth.route('/logout')
 @login_required
 def logout():
-    ImagesPath(current_user.username).delete_buffer()
+    ImagesPath(current_user.username, current_app.static_folder).delete_buffer()
     logout_user()
     flash('Yor have been logged out.')
     return redirect(url_for('main.index'))

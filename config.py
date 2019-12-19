@@ -14,6 +14,7 @@ class Config:
     FLASKY_FOLLOWERS_PER_PAGE = 10
     FLASKY_COMMENTS_PER_PAGE = 10
     TTL_TOKEN = 3600  # seconds
+    MODEL_ITERATION = 10
 
     @staticmethod
     def init_app(app):

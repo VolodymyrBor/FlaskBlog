@@ -4,13 +4,13 @@ from random import seed, randint
 from typing import Tuple, Dict, Union, Optional, List
 
 import forgery_py
+from flask import current_app, Flask, request, url_for
+from flask_login import UserMixin, AnonymousUserMixin
 from flask_sqlalchemy import BaseQuery
+from itsdangerous import BadSignature, TimedJSONWebSignatureSerializer as Serializer
 from markdown import markdown
 from sqlalchemy.exc import IntegrityError
-from flask import current_app, Flask, request, url_for, Response
-from flask_login import UserMixin, AnonymousUserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from itsdangerous import BadSignature, TimedJSONWebSignatureSerializer as Serializer
 
 from . import db, login_manager
 from .exceptions import ValidationError
@@ -116,6 +116,7 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    images = db.relationship('Images', backref='author', lazy='dynamic')
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
@@ -415,3 +416,18 @@ class Comment(db.Model, PostsCallback):
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
 db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+
+
+class Images(db.Model):
+    __tablename__ = 'images'
+    query: BaseQuery
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    filename = db.Column(db.String(128), unique=True, index=True)
+
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def __init__(self, filename: str, author: User):
+        self.filename = filename
+        self.author = author
